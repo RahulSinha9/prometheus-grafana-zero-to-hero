@@ -1,0 +1,41 @@
+# Selectors
+up
+up{job="node-exporter"}
+up{job=~"node.*"}
+
+# Aggregation
+sum(rate(http_requests_total[5m]))
+sum by (job) (rate(http_requests_total[5m]))
+avg by (instance) (node_cpu_seconds_total)
+
+# Counters
+rate(http_requests_total[5m])
+increase(http_requests_total[1h])
+
+# Errors
+sum(rate(http_requests_total{status=~"5.."}[5m]))
+
+# Error percentage
+100 * sum(rate(http_requests_total{status=~"5.."}[5m]))
+  / sum(rate(http_requests_total[5m]))
+
+# CPU busy percentage
+100 * (1 - avg by (instance) (
+  rate(node_cpu_seconds_total{mode="idle"}[5m])
+))
+
+# Memory used percentage
+100 * (1 - node_memory_MemAvailable_bytes
+  / node_memory_MemTotal_bytes)
+
+# Disk used percentage
+100 * (1 - node_filesystem_avail_bytes
+  / node_filesystem_size_bytes)
+
+# Histogram p95
+histogram_quantile(
+  0.95,
+  sum by (le) (
+    rate(http_request_duration_seconds_bucket[5m])
+  )
+)
