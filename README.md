@@ -2,16 +2,15 @@
 
 # 🚀 Prometheus + Grafana Zero to Hero
 
-### Build • Monitor • Query • Visualize • Alert • Troubleshoot
+### A hands-on observability journey from your first metric to real incident investigation.
 
-A hands-on, production-minded learning journey for mastering **Prometheus, PromQL, Grafana, Alertmanager, exporters, and Kubernetes observability** — from your first metric to real incident investigations.
+**Prometheus · PromQL · Grafana · Alertmanager · Exporters · Kubernetes**
 
-[![Prometheus](https://img.shields.io/badge/Prometheus-E6522C?logo=prometheus&logoColor=white)](https://prometheus.io/)
-[![Grafana](https://img.shields.io/badge/Grafana-F46800?logo=grafana&logoColor=white)](https://grafana.com/)
-[![Kubernetes](https://img.shields.io/badge/Kubernetes-326CE5?logo=kubernetes&logoColor=white)](https://kubernetes.io/)
-[![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
-[![Helm](https://img.shields.io/badge/Helm-0F1689?logo=helm&logoColor=white)](https://helm.sh/)
-[![License](https://img.shields.io/badge/Learning--Project-Open--Source-brightgreen)](#)
+[![Prometheus](https://img.shields.io/badge/Prometheus-E6522C?style=for-the-badge)](https://prometheus.io/)
+[![Grafana](https://img.shields.io/badge/Grafana-F46800?style=for-the-badge)](https://grafana.com/)
+[![Kubernetes](https://img.shields.io/badge/Kubernetes-326CE5?style=for-the-badge)](https://kubernetes.io/)
+[![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge)](https://www.docker.com/)
+[![Helm](https://img.shields.io/badge/Helm-0F1689?style=for-the-badge)](https://helm.sh/)
 
 **The goal:** stop memorizing dashboards and start thinking like an observability engineer.
 
@@ -19,348 +18,257 @@ A hands-on, production-minded learning journey for mastering **Prometheus, PromQ
 
 ---
 
-## 🌟 What This Repository Is
+## ⭐ What This Repository Is
 
-This repository is a **learn-by-doing observability lab**.
-
-Instead of reading isolated documentation, every stage connects the full monitoring workflow:
-
-```text
-┌─────────────┐
-│ Applications│
-└──────┬──────┘
-       │ metrics
-       ▼
-┌─────────────┐
-│ Prometheus  │ ──► PromQL ──► Analysis
-└──────┬──────┘
-       │
-       ▼
-┌─────────────┐       ┌─────────────┐
-│   Grafana   │       │ Alertmanager│
-│ Dashboards  │       │   Alerts    │
-└─────────────┘       └──────┬──────┘
-                              │
-                              ▼
-                    🚨 Incident Response
-                              │
-                              ▼
-                    🔍 Troubleshooting
-```
+A **learn-by-doing observability lab** that takes you from fundamentals to production-style monitoring.
 
 > **Learn → Build → Query → Visualize → Break → Troubleshoot → Improve**
 
+## 🔭 Observability Architecture
+
+```mermaid
+flowchart LR
+    A[Applications] -->|metrics| B[Prometheus]
+    B -->|PromQL| C[Analysis]
+    B --> D[Grafana]
+    B --> E[Alert Rules]
+    E --> F[Alertmanager]
+    F --> G[Incident Response]
+    G --> H[Troubleshooting]
+    H --> I[Improve & Automate]
+```
+
+This replaces the large ASCII diagram with a compact native GitHub diagram. GitHub supports Mermaid diagrams in Markdown. 
+
 ---
 
-## 🗺️ The Zero-to-Hero Roadmap
+## 🗺️ Learning Path
 
-| Stage | Focus | You will learn |
+| Stage | Focus | Outcome |
 |:---:|---|---|
-| 🟢 **00** | Foundations | Observability, metrics, labels, cardinality, Prometheus architecture |
-| 🔵 **01** | Prometheus | Installation, configuration, targets, service discovery, exporters |
-| 🟣 **02** | PromQL | Selectors, aggregation, rates, histograms, joins, recording rules |
-| 🟠 **03** | Grafana | Datasources, dashboards, panels, variables, provisioning |
-| 🔴 **04** | Alerting | Rules, Alertmanager, routing, silences, notifications |
-| 🟢 **05** | Linux Monitoring | Node Exporter, CPU, memory, disk, network |
-| 🔵 **06** | Kubernetes | kube-state-metrics, nodes, pods, kube-prometheus-stack, alerts |
-| 🟠 **07** | Real-World Labs | CPU spikes, memory leaks, disk full, latency, CrashLoopBackOff, outages |
-| 🏆 **08** | Projects | Linux, Kubernetes and production-style observability projects |
+| **00** | 🧠 Foundations | Metrics, labels, types, cardinality & architecture |
+| **01** | 🔥 Prometheus | Installation, configuration, targets, discovery & exporters |
+| **02** | 🔎 PromQL | Selectors, aggregation, rates, histograms, joins & recording rules |
+| **03** | 📊 Grafana | Datasources, dashboards, variables, panels & provisioning |
+| **04** | 🚨 Alerting | Rules, Alertmanager, routing, silences & notifications |
+| **05** | 🐧 Linux Monitoring | Node Exporter, CPU, memory, disk & network |
+| **06** | ☸️ Kubernetes | KSM, nodes, pods, kube-prometheus-stack & alerts |
+| **07** | 🧯 Real-World Labs | CPU, memory, disk, latency, CrashLoopBackOff & outages |
+| **08** | 🏆 Projects | Linux, Kubernetes & production-style observability |
 
 ---
 
-## 📂 Repository Structure
+## 📚 Repository Roadmap
 
-```text
-prometheus-grafana-zero-to-hero/
-│
-├── 00-foundations/
-│   ├── observability-basics/
-│   ├── metrics-labels-types/
-│   └── prometheus-architecture/
-│
-├── 01-prometheus/
-│   ├── installation/
-│   ├── configuration/
-│   ├── scrape-targets/
-│   ├── service-discovery/
-│   └── exporters/
-│
-├── 02-promql/
-│   ├── selectors/
-│   ├── aggregations/
-│   ├── rate-increase/
-│   ├── histogram/
-│   ├── joins/
-│   └── recording-rules/
-│
-├── 03-grafana/
-│   ├── prometheus-datasource/
-│   ├── dashboards/
-│   ├── variables/
-│   ├── panels/
-│   └── provisioning/
-│
-├── 04-alerting/
-│   ├── alert-rules/
-│   ├── alertmanager/
-│   ├── routing/
-│   ├── silences/
-│   └── notification-channels/
-│
-├── 05-linux-monitoring/
-│   ├── node-exporter/
-│   ├── cpu/
-│   ├── memory/
-│   ├── disk/
-│   └── network/
-│
-├── 06-kubernetes/
-│   ├── kube-state-metrics/
-│   ├── node-monitoring/
-│   ├── pod-monitoring/
-│   ├── kube-prometheus-stack/
-│   └── kubernetes-alerts/
-│
-├── 07-real-world-labs/
-│   ├── high-cpu/
-│   ├── memory-leak/
-│   ├── disk-full/
-│   ├── high-latency/
-│   ├── pod-crashloop/
-│   └── service-down/
-│
-└── 08-projects/
-    ├── linux-observability/
-    ├── kubernetes-observability/
-    └── production-monitoring-stack/
-```
+<details><summary><b>00 — Foundations</b></summary>
 
----
+- Observability basics
+- Metrics, labels & metric types
+- Prometheus architecture
 
-## 🧪 How Every Lab Works
+</details>
 
-Each lesson is designed to turn theory into operational skill.
+<details><summary><b>01 — Prometheus</b></summary>
 
-```text
-📖 CONCEPT
-    ↓
-🛠️ BUILD
-    ↓
-🔎 QUERY WITH PROMQL
-    ↓
-📊 VISUALIZE IN GRAFANA
-    ↓
-💥 INTRODUCE A FAILURE
-    ↓
-🚨 OBSERVE THE SIGNAL
-    ↓
-🔍 TROUBLESHOOT THE ROOT CAUSE
-    ↓
-📝 DOCUMENT THE FIX
-```
+- Installation
+- Configuration
+- Scrape targets
+- Service discovery
+- Exporters
 
-This approach is intentionally closer to how monitoring is used in real DevOps/SRE environments.
+</details>
+
+<details><summary><b>02 — PromQL</b></summary>
+
+- Selectors
+- Aggregations
+- `rate()` / `increase()`
+- Histograms
+- Joins
+- Recording rules
+
+</details>
+
+<details><summary><b>03 — Grafana</b></summary>
+
+- Prometheus datasource
+- Dashboards
+- Variables
+- Panels
+- Provisioning
+
+</details>
+
+<details><summary><b>04 — Alerting</b></summary>
+
+- Alert rules
+- Alertmanager
+- Routing
+- Silences
+- Notification channels
+
+</details>
+
+<details><summary><b>05 — Linux Monitoring</b></summary>
+
+- Node Exporter
+- CPU
+- Memory
+- Disk
+- Network
+
+</details>
+
+<details><summary><b>06 — Kubernetes</b></summary>
+
+- kube-state-metrics
+- Node monitoring
+- Pod monitoring
+- kube-prometheus-stack
+- Kubernetes alerts
+
+</details>
+
+<details><summary><b>07 — Real-World Labs</b></summary>
+
+- High CPU
+- Memory leak
+- Disk full
+- High latency
+- Pod CrashLoopBackOff
+- Service down
+
+</details>
+
+<details><summary><b>08 — Portfolio Projects</b></summary>
+
+- Linux observability
+- Kubernetes observability
+- Production monitoring stack
+
+</details>
 
 ---
 
-## 🔥 Real-World Incident Labs
+## 🧪 Learn by Breaking Things
 
-The final learning stages focus on scenarios that force you to investigate rather than simply follow a tutorial.
-
-| Incident | Investigation focus |
+| Scenario | Investigation Skills |
 |---|---|
-| 🔥 High CPU | CPU saturation, processes, rates and capacity |
-| 🧠 Memory Leak | Memory growth, working set and pressure |
-| 💾 Disk Full | Filesystem usage, inode pressure and cleanup |
-| 🐢 High Latency | Request duration, histograms and percentiles |
-| ☠️ Pod CrashLoop | Restart counters, pod state and events |
-| 🔌 Service Down | Target health, availability and alerting |
+| 🔥 High CPU | Identify noisy processes and correlate CPU metrics |
+| 🧠 Memory Leak | Detect growing memory usage and investigate trends |
+| 💾 Disk Full | Find filesystem pressure before applications fail |
+| 🐌 High Latency | Use histogram metrics and percentile analysis |
+| ☸️ CrashLoopBackOff | Correlate pod, container and Kubernetes metrics |
+| 🔴 Service Down | Distinguish target failure from application failure |
+
+Every incident lab asks:
+
+1. **What happened?**
+2. **How did the metrics reveal it?**
+3. **What was the root cause?**
+4. **How do we prevent it next time?**
 
 ---
 
 ## 🧰 Technology Stack
 
-<div align="center">
-
-| Category | Tools |
+| Tool | Role |
 |---|---|
-| Metrics | Prometheus, Node Exporter |
-| Querying | PromQL |
-| Visualization | Grafana |
-| Alerting | Prometheus Alert Rules, Alertmanager |
-| Kubernetes | Kubernetes, kube-state-metrics |
-| Packaging | Helm |
-| Local Labs | Docker, Docker Compose |
-| Operations | Linux, troubleshooting, runbooks |
-
-</div>
+| Prometheus | Metrics collection & time-series storage |
+| PromQL | Metrics querying & analysis |
+| Grafana | Visualization & dashboards |
+| Alertmanager | Alert routing & notification handling |
+| Node Exporter | Linux host metrics |
+| kube-state-metrics | Kubernetes object-state metrics |
+| Docker Compose | Local learning environment |
+| Kubernetes | Container orchestration labs |
+| Helm | Kubernetes package management |
 
 ---
 
 ## ⚡ Quick Start
 
-Start with the existing local Prometheus + Node Exporter lab:
-
 ```bash
-git clone https://github.com/RahulSinha9/prometheus-grafana-zero-to-hero.git
+git clone <repository-url>
 cd prometheus-grafana-zero-to-hero
 ```
 
-Then enter the first practical Prometheus lab and follow its local setup instructions.
+Start with `00-foundations`, then progress through each stage in order.
 
-> 💡 **Tip:** Work through the repository in order. The later Kubernetes and incident labs assume you understand the earlier Prometheus and PromQL concepts.
+Every module contains concepts, examples and hands-on exercises.
 
 ---
 
-## 📈 Learning Progress
+## 📈 Progress Tracker
 
-### Foundations
-
-- [ ] Observability basics
-- [ ] Metrics, labels and metric types
-- [ ] Prometheus architecture
-
-### Prometheus
-
-- [ ] Installation
-- [ ] Configuration
-- [ ] Scrape targets
-- [ ] Service discovery
+- [ ] Observability fundamentals
+- [ ] Prometheus installation & configuration
+- [ ] Scraping & service discovery
+- [ ] PromQL fundamentals
 - [ ] Exporters
-
-### PromQL
-
-- [ ] Selectors
-- [ ] Aggregations
-- [ ] `rate()` and `increase()`
-- [ ] Histograms
-- [ ] Vector matching and joins
-- [ ] Recording rules
-
-### Grafana & Alerting
-
-- [ ] Prometheus datasource
-- [ ] Dashboards and panels
-- [ ] Variables
-- [ ] Provisioning
-- [ ] Alert rules
-- [ ] Alertmanager
-- [ ] Routing and silences
-- [ ] Notification channels
-
-### Infrastructure & Kubernetes
-
-- [ ] Node Exporter
-- [ ] CPU / memory / disk / network monitoring
-- [ ] kube-state-metrics
-- [ ] Node monitoring
-- [ ] Pod monitoring
-- [ ] kube-prometheus-stack
-- [ ] Kubernetes alerts
-
-### Incident Response
-
-- [ ] High CPU
-- [ ] Memory leak
-- [ ] Disk full
-- [ ] High latency
-- [ ] Pod CrashLoopBackOff
-- [ ] Service down
-
-### Capstone
-
+- [ ] Grafana dashboards & variables
+- [ ] Alert rules & Alertmanager
+- [ ] Linux monitoring
+- [ ] Kubernetes monitoring
+- [ ] Incident troubleshooting labs
 - [ ] Linux observability project
 - [ ] Kubernetes observability project
 - [ ] Production monitoring stack
 
 ---
 
-## 🧠 What You Should Be Able to Do Afterward
+## 🎯 Skills You Will Build
 
-By the end, you should be able to:
-
-- Explain how Prometheus collects and stores metrics.
-- Design useful metric names and labels without unnecessary cardinality.
-- Write practical PromQL queries for investigation.
-- Build Grafana dashboards that answer operational questions.
-- Create meaningful alerts instead of noisy thresholds.
-- Configure Alertmanager routing and silences.
-- Monitor Linux hosts and Kubernetes workloads.
-- Investigate failures using metrics and time-series evidence.
-- Build recording rules for frequently used or expensive queries.
-- Assemble a production-style monitoring stack and document its operational runbooks.
+- Design Prometheus scrape configurations
+- Write practical PromQL queries
+- Understand labels and cardinality
+- Build useful Grafana dashboards
+- Create actionable alerts
+- Route and manage alerts with Alertmanager
+- Monitor Linux infrastructure with exporters
+- Monitor Kubernetes workloads and resources
+- Troubleshoot incidents using metrics instead of guesswork
+- Turn monitoring knowledge into operational runbooks
 
 ---
 
 ## 🏆 Portfolio Projects
 
-### 1. 🐧 Linux Observability
+### 🐧 Linux Observability
+Complete host monitoring with Prometheus, Node Exporter and Grafana.
 
-Build a complete Linux monitoring environment using Prometheus, Node Exporter and Grafana.
+### ☸️ Kubernetes Observability
+Monitor nodes, namespaces, workloads and pod health.
 
-**Focus:** infrastructure metrics, dashboards, alerts and troubleshooting.
-
-### 2. ☸️ Kubernetes Observability
-
-Monitor a Kubernetes cluster using Prometheus, Grafana and kube-state-metrics.
-
-**Focus:** nodes, namespaces, pods, workloads, resource usage and cluster alerts.
-
-### 3. 🚀 Production Monitoring Stack
-
-Bring the complete journey together into a production-style observability platform.
-
-**Focus:** dashboards, alerting, recording rules, incident scenarios, runbooks and operational practices.
+### 🏭 Production Monitoring Stack
+Combine metrics, dashboards, alerts, Alertmanager, recording rules and incident runbooks.
 
 ---
 
-## 📚 Official Documentation
+## 📚 Official Resources
 
-- [Prometheus Documentation](https://prometheus.io/docs/)
-- [PromQL Basics](https://prometheus.io/docs/prometheus/latest/querying/basics/)
-- [Grafana Documentation](https://grafana.com/docs/)
-- [Alertmanager Documentation](https://prometheus.io/docs/alerting/latest/alertmanager/)
-- [Kubernetes Documentation](https://kubernetes.io/docs/)
-- [Helm Documentation](https://helm.sh/docs/)
-
----
-
-## 🤝 Learning Philosophy
-
-This is not intended to be a collection of copied configuration snippets.
-
-The objective is to build **operational intuition**:
-
-> **When something breaks, can you look at the signals, form a hypothesis, prove it with data, and explain the fix?**
-
-If the answer becomes **yes**, you're moving from learning monitoring tools to thinking like an observability engineer.
+- Prometheus Documentation
+- PromQL Documentation
+- Grafana Documentation
+- Alertmanager Documentation
+- Kubernetes Documentation
 
 ---
 
-## ⭐ Project Status
+## 🌟 Philosophy
 
-```text
-🚧 Active Learning Project
+> **Don't just build dashboards. Build the ability to explain what the system is doing.**
 
-Foundations        ██████████░░  Building
-Prometheus         ████████░░░░  Building
-PromQL             ██████░░░░░░  Building
-Grafana            █████░░░░░░░  Building
-Alerting           ████░░░░░░░░  Building
-Linux Monitoring   ███░░░░░░░░░  Building
-Kubernetes         ██░░░░░░░░░░  Building
-Incident Labs      ██░░░░░░░░░░  Building
-Projects           █░░░░░░░░░░░  Planned
-```
-
-**Built incrementally with real labs, practical failures and production-oriented patterns.**
-
----
+Build the stack → generate signals → break components → investigate evidence → fix the problem → document the lesson.
 
 <div align="center">
 
-### ⭐ Star the repository if you're learning observability too.
+### 🚀 First Metric → Production-Style Observability
 
-**Prometheus + Grafana → Zero to Hero 🚀**
+**Learn. Build. Break. Troubleshoot. Improve.**
 
 </div>
+
+---
+
+**Status:** 🚧 Actively building · **Roadmap:** 00 → 08 · **Focus:** Prometheus + Grafana + Kubernetes Observability
