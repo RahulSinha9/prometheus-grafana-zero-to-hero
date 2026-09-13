@@ -1,0 +1,21 @@
+groups:
+  - name: demo-alerts
+    interval: 30s
+    rules:
+      - alert: InstanceDown
+        expr: up == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Instance {{ $labels.instance }} is down"
+          description: "{{ $labels.job }} has been unavailable for 5 minutes."
+
+      - alert: HighCPUUsage
+        expr: 100 * (1 - avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m]))) > 80
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU on {{ $labels.instance }}"
+          description: "CPU usage has been above 80% for 10 minutes."
