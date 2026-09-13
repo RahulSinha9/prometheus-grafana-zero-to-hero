@@ -1,228 +1,293 @@
-# Hands-on Code Examples
+# Hands-on Examples — Beginner Friendly Implementation Guide
 
-This directory is the **implementation lab** for the Prometheus + Grafana Zero to Hero course. The goal is not only to read syntax, but to understand how the pieces are installed, configured, connected, tested, broken, debugged, and operated.
+This folder is the **practical lab area** of the repository. The goal is simple: you should be able to open an example, understand what every file does, copy the commands, run the lab, verify the result, intentionally break something, and fix it.
 
-Prometheus uses YAML configuration for scrape jobs, rule files, and Alertmanager integration; alerting is split between Prometheus alert rules and Alertmanager notification/routing responsibilities. citeturn0search2turn0search4turn0search1
+> **Learning rule:** do not only read the code. Type it, run it, change it, observe what happens, and explain it back in your own words.
 
-## Learning Method
-
-Use every example in this order:
-
-1. **Read** the explanation and identify the component being configured.
-2. **Inspect** every configuration field before running it.
-3. **Implement** the example exactly once.
-4. **Run** the services or commands.
-5. **Verify** the result using HTTP endpoints, CLI commands, PromQL, or Kubernetes commands.
-6. **Modify** one value and observe what changes.
-7. **Break** one part intentionally.
-8. **Troubleshoot** using logs, status endpoints, metrics, and configuration validation.
-9. **Document** what you learned.
-10. **Repeat** the exercise without looking at the solution.
-
-## Example Roadmap
-
-| Directory | What you will implement |
-|---|---|
-| `01-prometheus` | Prometheus installation, YAML configuration, scrape targets and exporters |
-| `02-promql` | PromQL syntax, selectors, aggregation, rates, histograms and joins |
-| `03-alerting` | Alert rules, Alertmanager, routing, grouping and notification concepts |
-| `04-recording-rules` | Precomputed PromQL queries and reusable recording rules |
-| `05-grafana` | Datasources, dashboards, panels, variables and provisioning |
-| `06-linux-monitoring` | Node Exporter, CPU, memory, disk and network monitoring |
-| `07-kubernetes` | Kubernetes metrics, kube-state-metrics, pod/node monitoring and alerts |
+Prometheus collects metrics by scraping HTTP endpoints, stores them as time series, and lets you query them with PromQL. Grafana can connect to Prometheus as a data source and turn those queries into dashboards and alerts. citeturn0search3turn0search2turn0search5
 
 ---
 
-# 01 — Prometheus Implementation
+## 1. How to use this folder
 
-## Objective
+For every example, follow this order:
 
-Build a small monitoring stack in which Prometheus scrapes its own metrics and Node Exporter metrics.
+1. **Read the goal** — understand what problem we are solving.
+2. **Check prerequisites** — install only what the lab needs.
+3. **Understand the architecture** — know where data is coming from and where it goes.
+4. **Read the files** — understand the syntax before running anything.
+5. **Start the services** — use the provided commands.
+6. **Verify each layer** — do not assume that a running container means monitoring is working.
+7. **Run the query** — confirm that Prometheus actually has the expected metric.
+8. **Visualize it** — connect Grafana and create a panel when applicable.
+9. **Create an alert** — turn an important condition into an actionable signal.
+10. **Break the lab** — stop a target, change a port, or introduce a configuration mistake.
+11. **Troubleshoot** — use evidence instead of guessing.
+12. **Clean up** — remove containers/processes when finished.
 
-### Architecture
+---
+
+## 2. Big picture: what are we building?
+
+A beginner can think about the stack like this:
 
 ```text
-Node Exporter :9100
-       │
-       │ /metrics
-       ▼
-Prometheus :9090
-       │
-       ├── PromQL
-       └── Rules
+                    YOUR SERVER / APP
+                           │
+                           │ exposes metrics
+                           ▼
+                    ┌──────────────┐
+                    │ Node Exporter│
+                    │ /metrics     │
+                    └──────┬───────┘
+                           │
+                           │ HTTP scrape
+                           ▼
+                    ┌──────────────┐
+                    │  Prometheus  │
+                    │ stores data  │
+                    └──────┬───────┘
+                           │
+                    PromQL queries
+                           │
+                 ┌─────────┴─────────┐
+                 ▼                   ▼
+          ┌────────────┐      ┌──────────────┐
+          │   Grafana  │      │ Alert Rules  │
+          │ dashboards │      │              │
+          └────────────┘      └──────┬───────┘
+                                      │
+                                      ▼
+                               ┌─────────────┐
+                               │ Alertmanager│
+                               └─────────────┘
 ```
 
-## Step 1 — Prepare the workspace
+### In simple words
 
-```bash
-mkdir prometheus-lab
-cd prometheus-lab
-mkdir -p rules
+- **Exporter/application:** exposes information such as CPU, memory or request count.
+- **Prometheus:** visits the metrics endpoint and saves the values.
+- **PromQL:** asks questions about the saved metrics.
+- **Grafana:** turns query results into graphs, tables and dashboards.
+- **Alert rules:** continuously check whether an important condition is true.
+- **Alertmanager:** groups and routes alerts to notification receivers.
+
+Prometheus's official first-steps guide uses the same basic model: configure scrape targets, run Prometheus, and query collected metrics. citeturn0search3
+
+---
+
+# 3. Example directory map
+
+```text
+examples/
+├── 01-prometheus/
+│   └── Prometheus installation and scraping examples
+├── 02-promql/
+│   └── PromQL syntax and practical queries
+├── 03-alerting/
+│   └── Alert rules and Alertmanager examples
+├── 04-recording-rules/
+│   └── Precomputed PromQL examples
+├── 05-grafana/
+│   └── Datasources, dashboards and provisioning
+├── 06-linux-monitoring/
+│   └── CPU, memory, disk and network monitoring
+├── 07-kubernetes/
+│   └── Kubernetes monitoring examples
+├── CODE-GUIDE.md
+│   └── Syntax-focused reference
+└── README.md
+    └── This implementation guide
 ```
 
-## Step 2 — Create `prometheus.yml`
+---
+
+# 4. Lab 01 — Start with Prometheus
+
+## What are we trying to do?
+
+We want Prometheus to monitor itself.
+
+Prometheus normally listens on port `9090`. Its own `/metrics` endpoint exposes metrics that another Prometheus instance could scrape. The official getting-started tutorial uses this as the first monitoring example. citeturn0search3
+
+## Step 1 — Create a configuration file
+
+Create `prometheus.yml`:
 
 ```yaml
 global:
   scrape_interval: 15s
-  evaluation_interval: 15s
-
-rule_files:
-  - "rules/*.yml"
 
 scrape_configs:
-  - job_name: "prometheus"
+  - job_name: prometheus
     static_configs:
-      - targets: ["localhost:9090"]
-
-  - job_name: "node"
-    static_configs:
-      - targets: ["localhost:9100"]
+      - targets:
+          - "localhost:9090"
 ```
 
-### What each section means
+### Understand the YAML
 
-- `global.scrape_interval` controls how frequently Prometheus collects samples.
-- `evaluation_interval` controls how frequently rules are evaluated.
-- `rule_files` loads alerting and recording rules.
-- `scrape_configs` defines monitoring jobs.
-- `job_name` becomes the `job` label.
-- `targets` identifies the endpoints Prometheus should scrape.
+```yaml
+global:
+```
 
-## Step 3 — Run Prometheus
+This contains settings that apply globally.
 
-Example native execution:
+```yaml
+scrape_interval: 15s
+```
+
+Prometheus asks its targets for metrics every 15 seconds.
+
+```yaml
+scrape_configs:
+```
+
+This section tells Prometheus **what it should monitor**.
+
+```yaml
+job_name: prometheus
+```
+
+This gives the target group a readable name.
+
+```yaml
+targets:
+  - "localhost:9090"
+```
+
+This tells Prometheus where the metrics endpoint is located.
+
+Prometheus configuration files use YAML, and `scrape_configs` defines scraping jobs and their targets. citeturn0search15turn0search3
+
+## Step 2 — Start Prometheus
 
 ```bash
-./prometheus \
-  --config.file=prometheus.yml \
-  --web.enable-lifecycle
+./prometheus --config.file=prometheus.yml
 ```
 
-The lifecycle flag allows configuration reload through the reload endpoint. Prometheus documents `/-/reload` for runtime configuration reload when lifecycle support is enabled. citeturn0search2
+## Step 3 — Open Prometheus
 
-## Step 4 — Verify Prometheus
+Open:
 
-```bash
-curl http://localhost:9090/-/ready
-curl http://localhost:9090/api/v1/status/config
+```text
+http://localhost:9090
 ```
 
-Open the Prometheus expression browser and test:
+Then open the query page.
+
+## Step 4 — Run your first query
 
 ```promql
 up
 ```
 
-Then:
+You should see a value of `1` for a healthy scraped target.
+
+### What does `up` mean?
+
+`up` is a metric Prometheus creates for scrape targets:
+
+```text
+1 = scrape succeeded
+0 = scrape failed
+```
+
+This is one of the first metrics you should learn when troubleshooting Prometheus.
+
+---
+
+# 5. PromQL — learn the syntax slowly
+
+PromQL is Prometheus's query language. It selects and aggregates time-series data. citeturn0search2
+
+## 5.1 Select one metric
+
+```promql
+up
+```
+
+Meaning:
+
+> Give me the current `up` time series.
+
+## 5.2 Filter using a label
 
 ```promql
 up{job="prometheus"}
 ```
 
-And:
+Meaning:
 
-```promql
-up{job="node"}
-```
+> Give me `up` only where the `job` label equals `prometheus`.
 
-A healthy target normally produces a value of `1`; a failed scrape produces `0`.
-
-## Step 5 — Inspect targets
-
-Open:
-
-```text
-http://localhost:9090/targets
-```
-
-Check:
-
-- endpoint
-- state
-- last scrape
-- scrape duration
-- error message
-
-## Step 6 — Break the configuration
-
-Change:
-
-```yaml
-targets: ["localhost:9100"]
-```
-
-to an invalid port:
-
-```yaml
-targets: ["localhost:9199"]
-```
-
-Reload and query:
-
-```promql
-up{job="node"}
-```
-
-Expected learning result: the target should become unhealthy. Do not treat a failed target as an application outage automatically; first determine whether the scrape endpoint itself is reachable.
-
----
-
-# 02 — PromQL Syntax Lab
-
-PromQL is the query language used to select, transform, aggregate and calculate values from Prometheus time series.
-
-## Basic metric selector
-
-```promql
-up
-```
-
-## Label selector
-
-```promql
-up{job="node"}
-```
-
-## Multiple labels
-
-```promql
-up{job="node", instance="localhost:9100"}
-```
-
-## Negative match
+## 5.3 Filter using a different operator
 
 ```promql
 up{job!="prometheus"}
 ```
 
-## Regular expression match
+Meaning:
+
+> Give me targets whose `job` is not `prometheus`.
+
+## 5.4 Regular-expression matching
 
 ```promql
-up{job=~"node|prometheus"}
+up{job=~"node.*"}
 ```
 
-## Regular expression negative match
+Meaning:
+
+> Match jobs beginning with `node`.
+
+## 5.5 Calculate a rate
+
+For a counter metric:
 
 ```promql
-up{job!~"test.*"}
+rate(http_requests_total[5m])
 ```
 
-## Range vector
+Read this from the inside out:
+
+1. `http_requests_total` = metric.
+2. `[5m]` = look at the previous five minutes.
+3. `rate(...)` = calculate the per-second increase rate.
+
+## 5.6 Aggregate values
 
 ```promql
-up[5m]
+sum(rate(http_requests_total[5m]))
 ```
 
-A range selector supplies historical samples to functions such as `rate()`.
+Meaning:
 
-## Counter rate
+> Calculate request rate for each series and then add them together.
+
+## 5.7 Group by a label
 
 ```promql
-rate(node_cpu_seconds_total[5m])
+sum by (job) (
+  rate(http_requests_total[5m])
+)
 ```
 
-## CPU utilization
+Meaning:
+
+> Calculate request rate and produce one result for each `job`.
+
+---
+
+# 6. Linux CPU example
+
+A common infrastructure question is:
+
+> What percentage of CPU is being used?
+
+With Node Exporter metrics, a common calculation starts from CPU seconds in the `idle` mode.
+
+Example:
 
 ```promql
 100 * (1 - avg by(instance) (
@@ -230,214 +295,327 @@ rate(node_cpu_seconds_total[5m])
 ))
 ```
 
-## Aggregation
+### Understand the calculation
 
 ```promql
-sum by(job) (up)
+node_cpu_seconds_total{mode="idle"}
 ```
+
+Select CPU time spent idle.
 
 ```promql
-count by(job) (up)
+rate(...[5m])
 ```
+
+Calculate the recent rate of change.
 
 ```promql
-avg by(instance) (up)
+avg by(instance)(...)
 ```
 
-## Histogram percentile
+Average across CPU cores for each instance.
 
 ```promql
-histogram_quantile(
-  0.95,
-  sum by(le) (
-    rate(http_request_duration_seconds_bucket[5m])
-  )
-)
+1 - idle
 ```
 
-## Learning exercise
+Convert idle proportion into used proportion.
 
-For each query, answer:
+```promql
+100 * (...)
+```
 
-1. What metric is selected?
-2. What labels are filtered?
-3. Is the result an instant or range vector?
-4. Is a function being applied?
-5. Is aggregation changing the label set?
-6. What operational question does the query answer?
+Convert the proportion into a percentage.
+
+This is more useful than memorizing the final query because you can rebuild it when the metric names or grouping requirements change.
 
 ---
 
-# 03 — Prometheus Alerting + Alertmanager
+# 7. Grafana implementation
 
-Prometheus evaluates alerting rules. Alertmanager then handles grouping, routing, silencing, inhibition and notification delivery. citeturn0search4turn0search1
+Grafana uses data sources to connect to systems such as Prometheus and then uses queries to build visualizations. A dashboard is made from panels that query and visualize data. citeturn0search5turn0search4
 
-## Step 1 — Create an alert rule
+## Step 1 — Start Grafana
 
-Create `rules/node.yml`:
+Install or start Grafana using the method appropriate for your operating system.
+
+Open:
+
+```text
+http://localhost:3000
+```
+
+## Step 2 — Add Prometheus as a data source
+
+In Grafana:
+
+```text
+Connections
+   ↓
+Data sources
+   ↓
+Add data source
+   ↓
+Prometheus
+```
+
+For a local Prometheus server, the URL will commonly be:
+
+```text
+http://localhost:9090
+```
+
+Click **Save & Test**.
+
+## Step 3 — Create a panel
+
+Create a dashboard and add a visualization panel.
+
+Use:
+
+```promql
+up
+```
+
+Choose a suitable visualization such as **Time series** or **Stat**.
+
+Grafana's documentation describes the same workflow: connect a data source, run a query, and turn the result into a panel. citeturn0search6
+
+---
+
+# 8. Alert example
+
+Suppose a server becomes unreachable.
+
+We can create an alert based on:
+
+```promql
+up == 0
+```
+
+Example rule:
 
 ```yaml
 groups:
-  - name: node-alerts
+  - name: infrastructure
     rules:
-      - alert: NodeExporterDown
-        expr: up{job="node"} == 0
-        for: 2m
+      - alert: TargetDown
+        expr: up == 0
+        for: 5m
         labels:
           severity: critical
         annotations:
-          summary: "Node Exporter is unavailable"
-          description: "Node Exporter on {{ $labels.instance }} has been unavailable for more than 2 minutes."
+          summary: "Monitoring target is down"
+          description: "The target {{ $labels.instance }} has been unreachable for 5 minutes."
 ```
 
-## Step 2 — Validate the rule
+### Understand the rule
 
-Use Prometheus rule validation tooling appropriate to the installed version, then check the Prometheus `/rules` and `/alerts` pages after loading the rule.
+`alert:`
 
-## Step 3 — Configure Alertmanager connection
+The name of the alert.
 
-Add to `prometheus.yml`:
+`expr:`
 
-```yaml
-alerting:
-  alertmanagers:
-    - static_configs:
-        - targets:
-            - "localhost:9093"
-```
+The PromQL expression that decides whether the alert condition is true.
 
-## Step 4 — Create basic Alertmanager configuration
+`for:`
 
-```yaml
-global:
-  resolve_timeout: 5m
+The condition must remain true for five minutes before the alert becomes firing.
 
-route:
-  receiver: "default"
-  group_by:
-    - alertname
-    - instance
+`labels:`
 
-receivers:
-  - name: "default"
-```
+Additional metadata used for routing and grouping.
 
-Alertmanager's routing tree determines how alerts are grouped and which receiver handles them. citeturn0search0
+`annotations:`
 
-## Step 5 — Start Alertmanager
-
-```bash
-./alertmanager --config.file=alertmanager.yml
-```
-
-Verify:
-
-```bash
-curl http://localhost:9093/-/ready
-```
-
-## Step 6 — Trigger the alert
-
-Stop Node Exporter or point the target at an unreachable endpoint.
-
-Query:
-
-```promql
-up{job="node"}
-```
-
-Then inspect the alert in Prometheus and Alertmanager.
-
-## Step 7 — Learn routing
-
-Example severity-based routing:
-
-```yaml
-route:
-  receiver: "default"
-  routes:
-    - matchers:
-        - severity="critical"
-      receiver: "critical"
-
-receivers:
-  - name: "default"
-
-  - name: "critical"
-```
-
-For production integrations, keep credentials and webhook URLs out of Git. Alertmanager supports multiple notification integrations. citeturn0search10
+Human-readable information shown with the alert.
 
 ---
 
-# 04 — Recording Rules
+# 9. Recording rules
 
-Recording rules precompute frequently used expressions and store the result as a new time series.
+Sometimes a PromQL query is complex and used repeatedly.
 
-## Example
+Instead of calculating the same expensive query every time, create a recording rule.
 
 ```yaml
 groups:
-  - name: node-recording
+  - name: recording-rules
     interval: 30s
     rules:
-      - record: instance:node_cpu_utilization:ratio
+      - record: instance:cpu_usage:ratio
         expr: |
           1 - avg by(instance) (
             rate(node_cpu_seconds_total{mode="idle"}[5m])
           )
 ```
 
-Then query:
+Then query the recorded metric:
 
 ```promql
-instance:node_cpu_utilization:ratio
+instance:cpu_usage:ratio
 ```
 
-## Why use them?
-
-Use recording rules when:
-
-- the same expensive query is used repeatedly;
-- dashboards need predictable query performance;
-- alert rules should use a stable precomputed signal;
-- a complex expression should receive a clear metric name.
-
-## Exercise
-
-Create recording rules for:
-
-- CPU utilization
-- memory utilization
-- filesystem utilization
-- request rate
-- request error rate
+The important learning point is that the rule gives a complicated expression a reusable metric name.
 
 ---
 
-# 05 — Grafana Implementation
+# 10. Kubernetes example
 
-## Objective
-
-Connect Grafana to Prometheus and build a dashboard from PromQL.
-
-## Step 1 — Add Prometheus datasource
-
-For a local Grafana instance, the datasource URL might be:
+For Kubernetes, the learning process should be:
 
 ```text
-http://prometheus:9090
+Kubernetes objects
+       ↓
+Kube-state-metrics / node metrics / application metrics
+       ↓
+Prometheus
+       ↓
+PromQL
+       ↓
+Grafana
+       ↓
+Alerts
 ```
 
-If both applications run directly on the host, it may instead be:
+Example commands to investigate a pod:
+
+```bash
+kubectl get pods -A
+kubectl get pods -A -o wide
+kubectl describe pod <pod-name> -n <namespace>
+kubectl logs <pod-name> -n <namespace>
+kubectl get events -n <namespace> --sort-by=.lastTimestamp
+```
+
+If a pod is in `CrashLoopBackOff`, do not immediately restart it repeatedly. First inspect:
+
+```bash
+kubectl describe pod <pod-name> -n <namespace>
+kubectl logs <pod-name> -n <namespace> --previous
+```
+
+Then identify whether the problem is configuration, image, permissions, resources, probes, dependencies, or application code.
+
+---
+
+# 11. Failure simulation — learn by breaking things
+
+Monitoring becomes much easier when you practice incidents.
+
+## Target-down exercise
+
+1. Start Prometheus.
+2. Confirm `up == 1`.
+3. Stop the monitored exporter.
+4. Wait for the next scrape.
+5. Run:
+
+```promql
+up
+```
+
+6. Confirm the target changes to `0`.
+7. Investigate Prometheus target status.
+8. Start the exporter again.
+9. Confirm the target returns to `1`.
+
+### What you learned
+
+You did not just learn the `up` metric. You learned the complete operational cycle:
 
 ```text
-http://localhost:9090
+Healthy
+  ↓
+Failure
+  ↓
+Detection
+  ↓
+Investigation
+  ↓
+Recovery
+  ↓
+Verification
 ```
 
-Use the address reachable **from the Grafana process**, not necessarily from your browser.
+---
 
-## Step 2 — Test the datasource
+# 12. Troubleshooting method
+
+When something does not work, use this order.
+
+### Layer 1 — Is the process running?
+
+```bash
+ps aux | grep prometheus
+```
+
+or:
+
+```bash
+docker ps
+```
+
+### Layer 2 — Is the port listening?
+
+```bash
+ss -lntp
+```
+
+### Layer 3 — Can the metrics endpoint be reached?
+
+```bash
+curl http://localhost:9090/metrics
+```
+
+For an exporter:
+
+```bash
+curl http://localhost:9100/metrics
+```
+
+### Layer 4 — Does Prometheus know the target?
+
+Check the Targets page.
+
+### Layer 5 — Is `up` healthy?
+
+```promql
+up
+```
+
+### Layer 6 — Does the expected metric exist?
+
+Search for the metric in Prometheus.
+
+### Layer 7 — Is the PromQL query correct?
+
+Start simple:
+
+```promql
+up
+```
+
+Then add filters:
+
+```promql
+up{job="node"}
+```
+
+Then calculations:
+
+```promql
+rate(metric_total[5m])
+```
+
+This prevents you from debugging five different layers at the same time.
+
+---
+
+# 13. Beginner exercises
+
+### Exercise 1 — Find your targets
 
 Run:
 
@@ -445,301 +623,226 @@ Run:
 up
 ```
 
-The datasource test should succeed before creating dashboards.
+Answer:
 
-## Step 3 — Create dashboard panels
+- How many targets are there?
+- Which targets are healthy?
+- Which targets are failing?
+- What labels identify them?
 
-Useful starter panels:
+### Exercise 2 — Change the scrape interval
 
-### Target health
+Change:
+
+```yaml
+scrape_interval: 15s
+```
+
+to:
+
+```yaml
+scrape_interval: 30s
+```
+
+Reload/restart Prometheus and explain what changed.
+
+### Exercise 3 — Write a filtered query
+
+Find all targets for a specific job:
+
+```promql
+up{job="prometheus"}
+```
+
+Then try another job from your environment.
+
+### Exercise 4 — Break the target
+
+Change the target port to an incorrect value:
+
+```yaml
+targets:
+  - "localhost:9999"
+```
+
+Observe the failure.
+
+Then restore the correct port and verify recovery.
+
+### Exercise 5 — Build a dashboard
+
+Create panels for:
 
 ```promql
 up
 ```
 
-### CPU
+and, where Node Exporter is available:
 
 ```promql
-100 * (1 - avg by(instance) (
-  rate(node_cpu_seconds_total{mode="idle"}[5m])
-))
-```
-
-### Memory
-
-```promql
-100 * (
-  1 - node_memory_MemAvailable_bytes
-      / node_memory_MemTotal_bytes
-)
-```
-
-### Filesystem
-
-```promql
-100 * (
-  1 - node_filesystem_avail_bytes{fstype!~"tmpfs|overlay"}
-      / node_filesystem_size_bytes{fstype!~"tmpfs|overlay"}
-)
-```
-
-## Step 4 — Add a variable
-
-A common instance variable query is:
-
-```promql
-label_values(up, instance)
-```
-
-Then use it in a panel:
-
-```promql
-up{instance="$instance"}
+rate(node_cpu_seconds_total{mode="idle"}[5m])
 ```
 
 ---
 
-# 06 — Linux Monitoring
+# 14. Intermediate exercises
 
-## CPU investigation
-
-```bash
-uptime
-nproc
-top
-mpstat -P ALL 1
-```
-
-PromQL:
-
-```promql
-100 * (1 - avg by(instance) (
-  rate(node_cpu_seconds_total{mode="idle"}[5m])
-))
-```
-
-## Memory investigation
-
-```bash
-free -h
-vmstat 1
-ps aux --sort=-%mem | head
-```
-
-PromQL:
-
-```promql
-node_memory_MemAvailable_bytes
-```
-
-## Disk investigation
-
-```bash
-df -h
-lsblk
-du -xh /var 2>/dev/null | sort -h | tail
-```
-
-PromQL:
-
-```promql
-100 * (
-  1 - node_filesystem_avail_bytes
-      / node_filesystem_size_bytes
-)
-```
-
-## Network investigation
-
-```bash
-ip -s link
-ss -s
-ss -tulpen
-```
-
-The learning goal is to correlate Linux evidence with Prometheus metrics instead of looking at a dashboard in isolation.
+1. Create a CPU usage recording rule.
+2. Create a `TargetDown` alert.
+3. Add a severity label.
+4. Route critical alerts differently in Alertmanager.
+5. Build a dashboard with CPU, memory, disk and network panels.
+6. Add dashboard variables for `instance` and `job`.
+7. Intentionally stop Node Exporter and observe the alert lifecycle.
+8. Investigate a failed scrape using the target page and logs.
 
 ---
 
-# 07 — Kubernetes Monitoring
+# 15. Advanced exercises
 
-## Step 1 — Verify cluster access
-
-```bash
-kubectl cluster-info
-kubectl get nodes
-kubectl get pods -A
-```
-
-## Step 2 — Inspect pod state
-
-```bash
-kubectl get pods -A
-kubectl describe pod <pod-name> -n <namespace>
-kubectl logs <pod-name> -n <namespace>
-```
-
-## Step 3 — Check resource usage
-
-```bash
-kubectl top nodes
-kubectl top pods -A
-```
-
-## Step 4 — Deploy a test workload
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: demo-app
-spec:
-  replicas: 2
-  selector:
-    matchLabels:
-      app: demo-app
-  template:
-    metadata:
-      labels:
-        app: demo-app
-    spec:
-      containers:
-        - name: nginx
-          image: nginx:stable
-          ports:
-            - containerPort: 80
-```
-
-Apply it:
-
-```bash
-kubectl apply -f deployment.yaml
-kubectl get deployment demo-app
-kubectl get pods -l app=demo-app
-```
-
-## Step 5 — Simulate a failure
-
-Scale down:
-
-```bash
-kubectl scale deployment demo-app --replicas=0
-```
-
-Observe the monitoring impact, then recover:
-
-```bash
-kubectl scale deployment demo-app --replicas=2
-```
-
-## Step 6 — Investigate CrashLoopBackOff
-
-```bash
-kubectl get pods -A
-kubectl describe pod <pod-name> -n <namespace>
-kubectl logs <pod-name> -n <namespace> --previous
-kubectl get events -n <namespace> --sort-by=.lastTimestamp
-```
-
-The important operational sequence is:
+Build a small production-style monitoring stack containing:
 
 ```text
-Symptom
-  ↓
-Prometheus/Grafana signal
-  ↓
-Identify affected workload
-  ↓
-kubectl describe
-  ↓
-logs / events
-  ↓
-Find root cause
-  ↓
-Fix
-  ↓
-Verify recovery
+Prometheus
++ Node Exporter
++ Grafana
++ Alertmanager
++ Recording Rules
++ Alert Rules
++ Kubernetes metrics
+```
+
+Then simulate:
+
+- CPU saturation
+- Memory pressure
+- Disk exhaustion
+- Service outage
+- Pod CrashLoopBackOff
+- High request latency
+
+For each incident, record:
+
+```text
+Incident
+→ Detection signal
+→ PromQL query
+→ Evidence
+→ Root cause
+→ Recovery action
+→ Verification
+→ Preventive action
 ```
 
 ---
 
-# Validation Checklist
+# 16. What “good” implementation looks like
 
-Before considering an example complete, confirm:
+A finished example should not merely say:
 
-- [ ] Configuration syntax is valid.
-- [ ] Services start successfully.
-- [ ] Targets are visible in Prometheus.
-- [ ] `up` returns expected values.
-- [ ] PromQL query returns the expected series.
-- [ ] Grafana datasource connects successfully.
-- [ ] Dashboard panels display data.
-- [ ] Alert rules are loaded.
-- [ ] Alerts can transition between inactive, pending and firing states.
-- [ ] Alertmanager receives firing alerts.
-- [ ] Routing behavior is understood.
-- [ ] Failure recovery has been tested.
-- [ ] Secrets have not been committed.
+> “Create a Prometheus configuration.”
 
-# Troubleshooting Workflow
-
-When something does not work, do not immediately change multiple settings.
-
-Use this sequence:
+It should teach:
 
 ```text
-1. Is the process running?
-2. Is the endpoint reachable?
-3. Is the configuration valid?
-4. Is the target discovered?
-5. Is the target UP?
-6. Are samples being ingested?
-7. Does the PromQL query return data?
-8. Is Grafana querying the correct datasource?
-9. Is the alert expression true?
-10. Did Alertmanager receive the alert?
-11. Did routing select the expected receiver?
+WHY are we creating it?
+        ↓
+WHAT does each field mean?
+        ↓
+HOW do we create it?
+        ↓
+HOW do we run it?
+        ↓
+HOW do we verify it?
+        ↓
+WHAT does failure look like?
+        ↓
+HOW do we troubleshoot it?
+        ↓
+HOW would we improve it for production?
 ```
 
-Useful commands:
+That is the standard to follow for every example in this directory.
 
-```bash
-curl -v http://localhost:9090/-/ready
-curl -v http://localhost:9090/metrics
-curl -v http://localhost:9093/-/ready
+---
+
+# 17. Recommended learning progression
+
+| Level | Learn | Main outcome |
+|---|---|---|
+| Beginner | Metrics, targets, YAML, `up` | Understand basic monitoring |
+| Beginner | Selectors and labels | Write simple PromQL |
+| Intermediate | `rate`, aggregation, histograms | Analyze real metrics |
+| Intermediate | Grafana | Build dashboards |
+| Intermediate | Alert rules | Detect problems automatically |
+| Intermediate | Alertmanager | Route notifications |
+| Advanced | Recording rules | Optimize repeated queries |
+| Advanced | Kubernetes monitoring | Monitor clusters |
+| Advanced | Incident labs | Troubleshoot real failures |
+| Production | Full stack | Design an operational monitoring system |
+
+---
+
+# 18. Important habit
+
+Never memorize a PromQL query without understanding it.
+
+For example, instead of memorizing:
+
+```promql
+100 * (1 - avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])))
 ```
 
-For Alertmanager configuration, `amtool check-config` can be used to validate the configuration without requiring a running Alertmanager server. citeturn0search0
+learn the pieces:
 
-# Practice Challenges
+```text
+metric
+  ↓
+label filter
+  ↓
+range vector
+  ↓
+rate()
+  ↓
+aggregation
+  ↓
+mathematical conversion
+  ↓
+percentage
+```
 
-## Beginner
+Once you understand the pieces, you can build new queries yourself.
 
-1. Add a second scrape target.
-2. Change the scrape interval.
-3. Write a query filtering by `job`.
-4. Create a CPU panel.
-5. Create a basic target-down alert.
+---
 
-## Intermediate
+# 19. Completion checklist
 
-1. Create recording rules for CPU and memory.
-2. Build a dashboard variable for `instance`.
-3. Route critical alerts separately.
-4. Create a histogram p95 query.
-5. Break a target and document the troubleshooting process.
+- [ ] I can explain what a metric is.
+- [ ] I understand labels.
+- [ ] I can explain how Prometheus scrapes a target.
+- [ ] I can read a `prometheus.yml` file.
+- [ ] I can find a failed target.
+- [ ] I can use `up`.
+- [ ] I can write label selectors.
+- [ ] I understand counters and `rate()`.
+- [ ] I can aggregate metrics.
+- [ ] I understand histograms at a basic level.
+- [ ] I can connect Grafana to Prometheus.
+- [ ] I can create a Grafana panel.
+- [ ] I can write an alert rule.
+- [ ] I understand Alertmanager routing.
+- [ ] I can create a recording rule.
+- [ ] I can troubleshoot a failed scrape.
+- [ ] I can troubleshoot a Kubernetes monitoring problem.
+- [ ] I can perform a complete failure simulation.
 
-## Advanced
+---
 
-1. Deploy kube-prometheus-stack in a test Kubernetes cluster.
-2. Monitor nodes and workloads.
-3. Create Kubernetes availability alerts.
-4. Build a production-style dashboard.
-5. Simulate CPU, memory, disk and pod failures.
-6. Write a runbook for every alert.
+## Official references
 
-# Important Rule
-
-These examples are intentionally designed for learning. Replace placeholders such as `<pod-name>`, hostnames, credentials, webhook URLs and cluster-specific values before using them in a real environment. Never commit production secrets to this repository.
-
-The official Prometheus documentation should be used alongside these labs for version-specific configuration details. citeturn0search2turn0search9
+- Prometheus first steps: https://prometheus.io/docs/prometheus/latest/getting_started/
+- Prometheus configuration: https://prometheus.io/docs/prometheus/latest/configuration/configuration/
+- PromQL basics: https://prometheus.io/docs/prometheus/latest/querying/basics/
+- Grafana getting started: https://grafana.com/docs/grafana/latest/fundamentals/getting-started/
+- Grafana data sources: https://grafana.com/docs/learning-hub/intro-to-data-sources/
+- Grafana dashboards: https://grafana.com/docs/grafana-cloud/learn-and-build/visualizations/dashboards/
