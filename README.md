@@ -26,26 +26,31 @@ This repository is a **learn-by-doing observability lab**.
 Instead of reading isolated documentation, every stage connects the full monitoring workflow:
 
 ```text
-┌─────────────┐
-│ Applications│
-└──────┬──────┘
-       │ metrics
-       ▼
-┌─────────────┐
-│ Prometheus  │ ──► PromQL ──► Analysis
-└──────┬──────┘
-       │
-       ▼
-┌─────────────┐       ┌─────────────┐
-│   Grafana   │       │ Alertmanager│
-│ Dashboards  │       │   Alerts    │
-└─────────────┘       └──────┬──────┘
-                              │
-                              ▼
-                    🚨 Incident Response
-                              │
-                              ▼
-                    🔍 Troubleshooting
+┌───────────────┐
+│ Applications  │
+└───────┬───────┘
+        │ metrics
+        ▼
+┌───────────────┐
+│  Prometheus   │
+└───────┬───────┘
+        │
+        ├──► PromQL ──► Analysis
+        │
+        ├──► Grafana ──► Dashboards
+        │
+        └──► Alert Rules
+                 │
+                 ▼
+          ┌───────────────┐
+          │ Alertmanager  │
+          └───────┬───────┘
+                  │ Alerts
+                  ▼
+          🚨 Incident Response
+                  │
+                  ▼
+          🔍 Troubleshooting
 ```
 
 > **Learn → Build → Query → Visualize → Break → Troubleshoot → Improve**
